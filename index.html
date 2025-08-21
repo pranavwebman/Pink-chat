@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PinkChat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- PWA manifest + theme -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#ff7bac">
+
+  <style>
+    body {
+      font-family: 'Helvetica', Arial, sans-serif;
+      background: #ffe6f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .chat-container {
+      width: 95%;
+      max-width: 420px;
+      height: 90vh;
+      background: #fff0f5;
+      display: flex;
+      flex-direction: column;
+      border-radius: 20px;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+      overflow: hidden;
+      border: 2px solid #ffb6c1;
+    }
+
+    .header {
+      background: #ff7bac;
+      color: white;
+      text-align: center;
+      padding: 15px;
+      font-size: 20px;
+      font-weight: bold;
+      border-bottom-left-radius: 20px;
+      border-bottom-right-radius: 20px;
+    }
+
+    .messages {
+      flex: 1;
+      padding: 12px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      background: #ffe6f0;
+    }
+
+    .message {
+      margin: 6px 0;
+      padding: 10px 14px;
+      border-radius: 20px;
+      max-width: 75%;
+      word-wrap: break-word;
+      font-size: 14px;
+      position: relative;
+      line-height: 1.4;
+    }
+
+    .sent {
+      background: #ffb6c1;
+      align-self: flex-end;
+      color: #4a0000;
+    }
+
+    .received {
+      background: #fff;
+      align-self: flex-start;
+      color: #000;
+    }
+
+    .nickname {
+      font-size: 12px;
+      font-weight: bold;
+      margin-bottom: 4px;
+      color: #d6336c;
+    }
+
+    .input-container {
+      display: flex;
+      padding: 10px;
+      border-top: 1px solid #ffc0cb;
+      background: #fff0f5;
+    }
+
+    .input-container input {
+      flex: 1;
+      padding: 12px 15px;
+      border: 1px solid #ffc0cb;
+      border-radius: 25px;
+      outline: none;
+      font-size: 14px;
+      background: #fff;
+    }
+
+    .input-container button {
+      margin-left: 10px;
+      padding: 12px 18px;
+      border: none;
+      background: #ff3385;
+      color: white;
+      border-radius: 25px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+
+    .input-container button:hover {
+      background: #ff66aa;
+    }
+
+    /* Scrollbar style */
+    .messages::-webkit-scrollbar {
+      width: 6px;
+    }
+    .messages::-webkit-scrollbar-thumb {
+      background-color: #ff99bb;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="chat-container">
+    <div class="header">💖 PinkChat</div>
+    <div class="messages" id="messages"></div>
+    <div class="input-container">
+      <input id="messageInput" placeholder="Type your message..." />
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
+
+    const firebaseConfig = {  
+    apiKey: "AIzaSyC1qOIWN9VMHIi4Yk93QHoaQ5MYAFw04BE",  
+    authDomain: "pinkchat-6fe2b.firebaseapp.com",  
+    projectId: "pinkchat-6fe2b",  
+    storageBucket: "pinkchat-6fe2b.firebasestorage.app",  
+    messagingSenderId: "1043520441924",  
+    appId: "1:1043520441924:web:32abbc5e17ece90197f611"  
+  };  
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const messagesRef = ref(db, "messages");
+
+    let nickname = localStorage.getItem("nickname");
+    if (!nickname) {
+      nickname = prompt("Enter your nickname:");
+      localStorage.setItem("nickname", nickname);
+    }
+
+    window.sendMessage = function() {
+      const input = document.getElementById("messageInput");
+      const text = input.value.trim();
+      if (text) {
+        push(messagesRef, { name: nickname, text: text });
+        input.value = "";
+      }
+    };
+
+    const messagesEl = document.getElementById("messages");
+    onChildAdded(messagesRef, (data) => {
+      const msg = data.val();
+      const div = document.createElement("div");
+      div.classList.add("message");
+      if (msg.name === nickname) {
+        div.classList.add("sent");
+      } else {
+        div.classList.add("received");
+        const nameEl = document.createElement("div");
+        nameEl.classList.add("nickname");
+        nameEl.textContent = msg.name;
+        div.appendChild(nameEl);
+      }
+      const textEl = document.createElement("div");
+      textEl.textContent = msg.text;
+      div.appendChild(textEl);
+
+      messagesEl.appendChild(div);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    });
+  </script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js')
+        .then(() => console.log("✅ Service Worker Registered"))
+        .catch(err => console.log("❌ Service Worker Failed:", err));
+    }
+  </script>
+</body>
+  </html>
